@@ -1,3 +1,7 @@
+## 0.0.5
+
+- update overlay AutoCompleteField
+
 ## 0.0.4
 
 - update properties(width) AutoCompleteField

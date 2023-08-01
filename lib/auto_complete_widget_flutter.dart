@@ -10,6 +10,7 @@ typedef WidgetBuilderChildren<T> = Widget Function(
 typedef FuncSort<T> = bool Function(String, T);
 typedef StringFunc<T> = String Function(T);
 typedef OnResult<T> = void Function(T);
+typedef ValueX = (double?, double?, double);
 
 class AutoCompleteField<T> extends StatefulWidget {
   const AutoCompleteField({
@@ -46,15 +47,17 @@ class AutoCompleteField<T> extends StatefulWidget {
   State<AutoCompleteField<T>> createState() => _AutoCompleteFieldState<T>();
 }
 
-class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
+class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
+    with WidgetsBindingObserver {
   late FocusNode node;
   late TextEditingController controller;
   late OverlayEntry overlayEntry;
   late T? _selectedValue;
+  late ValueX o;
   bool _show = false;
-  StreamController<List<T>> controllerValues =
-      StreamController.broadcast(sync: true);
-  StreamController<T> selected = StreamController.broadcast(sync: true);
+  StreamController<List<T>> controllerValues = StreamController.broadcast();
+  StreamController<ValueX> metrics = StreamController.broadcast();
+  StreamController<T> selected = StreamController.broadcast();
 
   Widget get child => StreamBuilder<List<T>>(
         stream: controllerValues.stream,
@@ -108,10 +111,19 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
       );
 
   @override
+  void didChangeMetrics() {
+    setState(() {});
+    metrics.sink.add(sizeShow(context));
+    super.didChangeMetrics();
+  }
+
+  @override
   void initState() {
+    WidgetsBinding.instance.addObserver(this);
     node = widget.focusNode ?? FocusNode();
     controller = widget.controller ?? TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      o = sizeShow(context);
       node.addListener(() => _listen(context));
       controller.addListener(_listenText);
     });
@@ -119,9 +131,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
     _selectedValue = widget.selected;
   }
 
-  void showOverlay(BuildContext context) {
-    _show = true;
-    //#region mode
+  ValueX sizeShow(BuildContext context) {
     final sizeThis = context._sizeWidget.height;
     final sizeOverlay = context._sizeWidget.height * 4;
     final sizeDevice = MediaQuery.sizeOf(context).height;
@@ -132,7 +142,13 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
     if (sizeShow > sizeOverlay) {
       mode = false;
     }
-    //#endregion
+    final bottom = !mode ? sizeShow : null;
+    final top = !mode ? null : sizeShowTop;
+    return (top, bottom, sizeOverlay);
+  }
+
+  void showOverlay(BuildContext context) {
+    _show = true;
     overlayEntry = OverlayEntry(
       builder: (ctx) => Material(
         type: MaterialType.transparency,
@@ -142,30 +158,36 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
             FocusScope.of(context).unfocus();
             overlayEntry.remove();
           },
-          child: Container(
-            color: Colors.transparent,
-            width: double.infinity,
-            height: double.infinity,
-            child: Stack(
-              children: [
-                Positioned(
-                  top: mode ? null : sizeShowTop,
-                  bottom: mode ? sizeShow : null,
-                  left: context._position.dx,
-                  child: Container(
-                    width: widget.width ?? context._sizeWidget.width,
-                    decoration: BoxDecoration(
-                      color: Colors.blue[100],
+          child: StreamBuilder<ValueX>(
+            stream: metrics.stream,
+            initialData: o,
+            builder: (context, snapshot) {
+              return Container(
+                color: Colors.transparent,
+                width: double.infinity,
+                height: double.infinity,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: snapshot.data?.$1,
+                      bottom: snapshot.data?.$2,
+                      left: context._position.dx,
+                      child: Container(
+                        width: widget.width ?? context._sizeWidget.width,
+                        decoration: BoxDecoration(
+                          color: Colors.blue[100],
+                        ),
+                        constraints: BoxConstraints(
+                          // minHeight: context.sizeWidget.height,
+                          maxHeight: snapshot.data?.$3 ?? o.$3,
+                        ),
+                        child: child,
+                      ),
                     ),
-                    constraints: BoxConstraints(
-                      // minHeight: context.sizeWidget.height,
-                      maxHeight: sizeOverlay,
-                    ),
-                    child: child,
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -175,6 +197,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_show) {
       overlayEntry.remove();
     }
@@ -211,11 +234,13 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.child?.call(node, controller) ??
-        TextFormField(
-          focusNode: node,
-          controller: controller,
-        );
+    return SafeArea(
+      child: widget.child?.call(node, controller) ??
+          TextFormField(
+            focusNode: node,
+            controller: controller,
+          ),
+    );
   }
 }
 
