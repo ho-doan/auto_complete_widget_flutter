@@ -24,8 +24,11 @@ class AutoCompleteField<T> extends StatefulWidget {
     required this.onResult,
     this.decoration,
     this.child,
+    this.focusNode,
+    this.controller,
   });
-
+  final FocusNode? focusNode;
+  final TextEditingController? controller;
   final List<T> values;
   final T? selected;
   final Decoration? decoration;
@@ -42,8 +45,8 @@ class AutoCompleteField<T> extends StatefulWidget {
 }
 
 class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
-  final node = FocusNode();
-  final controller = TextEditingController();
+  late FocusNode node;
+  late TextEditingController controller;
   late OverlayEntry overlayEntry;
   late T? _selectedValue;
   bool _show = false;
@@ -104,6 +107,8 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
 
   @override
   void initState() {
+    node = widget.focusNode ?? FocusNode();
+    controller = widget.controller ?? TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       node.addListener(() => _listen(context));
       controller.addListener(_listenText);
