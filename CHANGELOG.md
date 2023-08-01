@@ -1,6 +1,10 @@
+## 0.0.4
+
+- update properties(width) AutoCompleteField
+
 ## 0.0.3
 
-- update propeties AutoCompleteField
+- update properties AutoCompleteField
 
 ## 0.0.2
 

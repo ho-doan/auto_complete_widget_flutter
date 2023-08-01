@@ -26,19 +26,21 @@ class AutoCompleteField<T> extends StatefulWidget {
     this.child,
     this.focusNode,
     this.controller,
+    this.width,
   });
   final FocusNode? focusNode;
   final TextEditingController? controller;
+  final Widget? separatorBuilder;
+  final Decoration? decoration;
+  final Widget? empty;
+  final double? width;
   final List<T> values;
   final T? selected;
-  final Decoration? decoration;
   final WidgetBuilder<T> builder;
   final FuncSort<T> onSort;
-  final Widget? empty;
-  final StringFunc result;
-  final OnResult onResult;
-  final Widget? separatorBuilder;
-  final WidgetBuilderChildren? child;
+  final StringFunc<T> result;
+  final OnResult<T> onResult;
+  final WidgetBuilderChildren<T>? child;
 
   @override
   State<AutoCompleteField<T>> createState() => _AutoCompleteFieldState<T>();
@@ -151,7 +153,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
                   bottom: mode ? sizeShow : null,
                   left: context._position.dx,
                   child: Container(
-                    width: context._sizeWidget.width,
+                    width: widget.width ?? context._sizeWidget.width,
                     decoration: BoxDecoration(
                       color: Colors.blue[100],
                     ),
