@@ -115,10 +115,10 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
   void showOverlay(BuildContext context) {
     _show = true;
     //#region mode
-    final sizeThis = context.sizeWidget.height;
-    final sizeOverlay = context.sizeWidget.height * 4;
+    final sizeThis = context._sizeWidget.height;
+    final sizeOverlay = context._sizeWidget.height * 4;
     final sizeDevice = MediaQuery.sizeOf(context).height;
-    final positionThis = context.position.dy;
+    final positionThis = context._position.dy;
     final sizeShow = sizeDevice - positionThis;
     final sizeShowTop = positionThis + sizeThis;
     bool mode = true;
@@ -144,9 +144,9 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
                 Positioned(
                   top: mode ? null : sizeShowTop,
                   bottom: mode ? sizeShow : null,
-                  left: context.position.dx,
+                  left: context._position.dx,
                   child: Container(
-                    width: context.sizeWidget.width,
+                    width: context._sizeWidget.width,
                     decoration: BoxDecoration(
                       color: Colors.blue[100],
                     ),
@@ -213,7 +213,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
 }
 
 extension BuildContextX on BuildContext {
-  Offset get position {
+  Offset get _position {
     final RenderBox? renderBox = findRenderObject() as RenderBox?;
     final NavigatorState? state = findAncestorStateOfType<NavigatorState>();
     if (state != null) {
@@ -226,7 +226,7 @@ extension BuildContextX on BuildContext {
     return renderBox?.localToGlobal(Offset.zero) ?? Offset.zero;
   }
 
-  Size get sizeWidget {
+  Size get _sizeWidget {
     final RenderBox? renderBox = findRenderObject() as RenderBox?;
     return renderBox?.size ?? Size.zero;
   }
