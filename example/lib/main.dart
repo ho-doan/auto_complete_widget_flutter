@@ -38,9 +38,9 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(
+      body: const Center(
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(8.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -52,7 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
               //     debugPrint('You just selected $selection');
               //   },
               // ),
-              const Hindi(),
+              Hindi(),
             ],
           ),
         ),

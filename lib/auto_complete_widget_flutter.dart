@@ -59,7 +59,6 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
   Timer? _timer;
   bool focus = false;
   StreamController<List<T>> controllerValues = StreamController.broadcast();
-  StreamController<ValueX> metrics = StreamController.broadcast();
   StreamController<T> selected = StreamController.broadcast();
 
   Widget get child => StreamBuilder<List<T>>(
@@ -117,12 +116,14 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
   void didChangeMetrics() {
     _timer?.cancel();
     if (overlayEntry == null && focus) {
-      _timer = Timer.periodic(const Duration(milliseconds: 150), (timer) {
-        _timer!.cancel();
-        showOverlay(context);
-      });
+      _timer = Timer.periodic(
+        const Duration(milliseconds: 100),
+        (timer) {
+          _timer!.cancel();
+          showOverlay(context, sizeShow(context));
+        },
+      );
     }
-    metrics.sink.add(sizeShow(context));
     super.didChangeMetrics();
   }
 
@@ -159,7 +160,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
     return (top, bottom, sizeOverlay, width, left);
   }
 
-  void showOverlay(BuildContext context) {
+  void showOverlay(BuildContext context, ValueX value) {
     overlayEntry = OverlayEntry(
       builder: (ctx) => Material(
         type: MaterialType.transparency,
@@ -169,38 +170,29 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
             overlayEntry?.remove();
             overlayEntry = null;
           },
-          child: StreamBuilder<ValueX>(
-            stream: metrics.stream,
-            initialData: o,
-            builder: (context, snapshot) {
-              return Container(
-                color: Colors.transparent,
-                width: double.infinity,
-                height: double.infinity,
-                child: Stack(
-                  children: [
-                    // AnimatedPositioned(
-                    Positioned(
-                      // duration: const Duration(milliseconds: 10),
-                      top: snapshot.data?.$1,
-                      bottom: snapshot.data?.$2,
-                      left: snapshot.data?.$5,
-                      child: Container(
-                        width: snapshot.data?.$4,
-                        decoration: BoxDecoration(
-                          color: Colors.blue[100],
-                        ),
-                        constraints: BoxConstraints(
-                          // minHeight: context.sizeWidget.height,
-                          maxHeight: snapshot.data?.$3 ?? o.$3,
-                        ),
-                        child: child,
-                      ),
+          child: Container(
+            color: Colors.transparent,
+            width: double.infinity,
+            height: double.infinity,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: value.$1,
+                  bottom: value.$2,
+                  left: value.$5,
+                  child: Container(
+                    width: value.$4,
+                    decoration: BoxDecoration(
+                      color: Colors.blue[100],
                     ),
-                  ],
+                    constraints: BoxConstraints(
+                      maxHeight: value.$3,
+                    ),
+                    child: child,
+                  ),
                 ),
-              );
-            },
+              ],
+            ),
           ),
         ),
       ),
