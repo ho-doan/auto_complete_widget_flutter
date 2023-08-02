@@ -10,7 +10,7 @@ typedef WidgetBuilderChildren<T> = Widget Function(
 typedef FuncSort<T> = bool Function(String, T);
 typedef StringFunc<T> = String Function(T);
 typedef OnResult<T> = void Function(T);
-typedef ValueX = (double?, double?, double);
+typedef ValueX = (double?, double?, double, double, double);
 
 class AutoCompleteField<T> extends StatefulWidget {
   const AutoCompleteField({
@@ -27,14 +27,16 @@ class AutoCompleteField<T> extends StatefulWidget {
     this.child,
     this.focusNode,
     this.controller,
-    this.width,
+    this.ctx,
+    this.paddingLeft = 0,
   });
   final FocusNode? focusNode;
   final TextEditingController? controller;
   final Widget? separatorBuilder;
   final Decoration? decoration;
+  final double paddingLeft;
   final Widget? empty;
-  final double? width;
+  final BuildContext? ctx;
   final List<T> values;
   final T? selected;
   final WidgetBuilder<T> builder;
@@ -51,10 +53,11 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
     with WidgetsBindingObserver {
   late FocusNode node;
   late TextEditingController controller;
-  late OverlayEntry overlayEntry;
+  OverlayEntry? overlayEntry;
   late T? _selectedValue;
   late ValueX o;
-  bool _show = false;
+  Timer? _timer;
+  bool focus = false;
   StreamController<List<T>> controllerValues = StreamController.broadcast();
   StreamController<ValueX> metrics = StreamController.broadcast();
   StreamController<T> selected = StreamController.broadcast();
@@ -92,8 +95,8 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
                         );
                         selected.sink.add(v[index]);
                         widget.onResult(v[index]);
-                        overlayEntry.remove();
-                        _show = false;
+                        overlayEntry?.remove();
+                        overlayEntry = null;
                         FocusScope.of(context).unfocus();
                       },
                       child: widget.builder(
@@ -112,7 +115,13 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
 
   @override
   void didChangeMetrics() {
-    setState(() {});
+    _timer?.cancel();
+    if (overlayEntry == null && focus) {
+      _timer = Timer.periodic(const Duration(milliseconds: 150), (timer) {
+        _timer!.cancel();
+        showOverlay(context);
+      });
+    }
     metrics.sink.add(sizeShow(context));
     super.didChangeMetrics();
   }
@@ -144,19 +153,21 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
     }
     final bottom = !mode ? sizeShow : null;
     final top = !mode ? null : sizeShowTop;
-    return (top, bottom, sizeOverlay);
+    final width = (widget.ctx?._sizeWidget.width ?? context._sizeWidget.width) -
+        widget.paddingLeft;
+    final left = context._position.dx + widget.paddingLeft;
+    return (top, bottom, sizeOverlay, width, left);
   }
 
   void showOverlay(BuildContext context) {
-    _show = true;
     overlayEntry = OverlayEntry(
       builder: (ctx) => Material(
         type: MaterialType.transparency,
         child: GestureDetector(
           onTap: () {
-            _show = false;
             FocusScope.of(context).unfocus();
-            overlayEntry.remove();
+            overlayEntry?.remove();
+            overlayEntry = null;
           },
           child: StreamBuilder<ValueX>(
             stream: metrics.stream,
@@ -168,12 +179,14 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
                 height: double.infinity,
                 child: Stack(
                   children: [
+                    // AnimatedPositioned(
                     Positioned(
+                      // duration: const Duration(milliseconds: 10),
                       top: snapshot.data?.$1,
                       bottom: snapshot.data?.$2,
-                      left: context._position.dx,
+                      left: snapshot.data?.$5,
                       child: Container(
-                        width: widget.width ?? context._sizeWidget.width,
+                        width: snapshot.data?.$4,
                         decoration: BoxDecoration(
                           color: Colors.blue[100],
                         ),
@@ -192,15 +205,14 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
         ),
       ),
     );
-    Overlay.maybeOf(context)?.insert(overlayEntry);
+    Overlay.maybeOf(context)?.insert(overlayEntry!);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    if (_show) {
-      overlayEntry.remove();
-    }
+    overlayEntry?.remove();
+    overlayEntry = null;
     node.removeListener(() => _listen(context));
     controller.removeListener(_listenText);
     controllerValues.close();
@@ -223,24 +235,20 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
   }
 
   void _listen(BuildContext context) {
-    if (node.hasFocus) {
-      showOverlay(context);
-    } else {
-      if (!_show) return;
-      overlayEntry.remove();
-      _show = false;
+    focus = node.hasFocus;
+    if (!focus) {
+      overlayEntry?.remove();
+      overlayEntry = null;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: widget.child?.call(node, controller) ??
-          TextFormField(
-            focusNode: node,
-            controller: controller,
-          ),
-    );
+    return widget.child?.call(node, controller) ??
+        TextFormField(
+          focusNode: node,
+          controller: controller,
+        );
   }
 }
 
