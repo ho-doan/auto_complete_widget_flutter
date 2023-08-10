@@ -28,13 +28,13 @@ class AutoCompleteField<T> extends StatefulWidget {
     this.focusNode,
     this.controller,
     this.ctx,
-    this.paddingLeft = 0,
+    this.paddingLeft,
   });
   final FocusNode? focusNode;
   final TextEditingController? controller;
   final Widget? separatorBuilder;
   final Decoration? decoration;
-  final double paddingLeft;
+  final double? paddingLeft;
   final Widget? empty;
   final BuildContext? ctx;
   final List<T> values;
@@ -146,7 +146,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
     final sizeOverlay = context._sizeWidget.height * 4;
     final sizeDevice = MediaQuery.sizeOf(context).height;
     final positionThis = context._position.dy;
-    final sizeShow = sizeDevice - positionThis;
+    final sizeShow = sizeDevice - positionThis - kToolbarHeight;
     final sizeShowTop = positionThis + sizeThis;
     bool mode = true;
     if (sizeShow > sizeOverlay) {
@@ -154,9 +154,10 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
     }
     final bottom = !mode ? sizeShow : null;
     final top = !mode ? null : sizeShowTop;
-    final width = (widget.ctx?._sizeWidget.width ?? context._sizeWidget.width) -
-        widget.paddingLeft;
-    final left = context._position.dx + widget.paddingLeft;
+    final width = (widget.ctx != null
+        ? widget.ctx!._sizeWidget.width - (widget.paddingLeft ?? 0)
+        : context._sizeWidget.width);
+    final left = widget.paddingLeft ?? context._position.dx;
     return (top, bottom, sizeOverlay, width, left);
   }
 
@@ -182,9 +183,10 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
                   left: value.$5,
                   child: Container(
                     width: value.$4,
-                    decoration: BoxDecoration(
-                      color: Colors.blue[100],
-                    ),
+                    decoration: widget.decoration ??
+                        BoxDecoration(
+                          color: Colors.blue[100],
+                        ),
                     constraints: BoxConstraints(
                       maxHeight: value.$3,
                     ),

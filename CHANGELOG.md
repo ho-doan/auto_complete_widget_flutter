@@ -1,3 +1,23 @@
+## 0.1.0
+
+- add safe area overlay
+
+## 0.0.9
+
+- update overlay AutoCompleteField
+
+## 0.0.8
+
+- update overlay AutoCompleteField
+
+## 0.0.7
+
+- update overlay AutoCompleteField
+
+## 0.0.6
+
+- update overlay AutoCompleteField
+
 ## 0.0.5
 
 - update overlay AutoCompleteField
