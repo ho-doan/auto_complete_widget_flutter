@@ -91,6 +91,12 @@ class Hindi extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.grey[200],
             ),
+            child: (p0, p1) {
+              return TextFormField(
+                focusNode: p0,
+                controller: p1,
+              );
+            },
             onResult: (p0) {},
             separatorBuilder: Container(
               height: 1,

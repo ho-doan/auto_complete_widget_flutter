@@ -2,6 +2,7 @@ library auto_complete_widget_flutter;
 
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 typedef WidgetBuilder<T> = Widget Function(T, String, bool);
@@ -10,7 +11,23 @@ typedef WidgetBuilderChildren<T> = Widget Function(
 typedef FuncSort<T> = bool Function(String, T);
 typedef StringFunc<T> = String Function(T);
 typedef OnResult<T> = void Function(T);
-typedef ValueX = (double?, double?, double, double, double);
+
+typedef ValueX = (
+  /// bottom
+  double? top,
+
+  /// top
+  double?,
+
+  /// sizeOverlay
+  double,
+
+  /// width
+  double,
+
+  /// left
+  double,
+);
 
 class AutoCompleteField<T> extends StatefulWidget {
   const AutoCompleteField({
@@ -74,7 +91,9 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
             stream: selected.stream,
             builder: (ctx, valueSelected) {
               return SingleChildScrollView(
+                dragStartBehavior: DragStartBehavior.down,
                 child: ListView.separated(
+                  dragStartBehavior: DragStartBehavior.down,
                   shrinkWrap: true,
                   padding: EdgeInsets.zero,
                   physics: const NeverScrollableScrollPhysics(),
@@ -120,7 +139,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
         const Duration(milliseconds: 100),
         (timer) {
           _timer!.cancel();
-          showOverlay(context, sizeShow(context));
+          showOverlay(context);
         },
       );
     }
@@ -147,21 +166,22 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
     final sizeDevice = MediaQuery.sizeOf(context).height;
     final positionThis = context._position.dy;
     final sizeShow = sizeDevice - positionThis - kToolbarHeight;
-    final sizeShowTop = positionThis + sizeThis;
+    final sizeShowTop = positionThis;
     bool mode = true;
     if (sizeShow > sizeOverlay) {
       mode = false;
     }
-    final bottom = !mode ? sizeShow : null;
-    final top = !mode ? null : sizeShowTop;
+    final top = !mode ? sizeShowTop + sizeThis : null;
+    final bottom = !mode ? null : sizeDevice - sizeShowTop;
     final width = (widget.ctx != null
         ? widget.ctx!._sizeWidget.width - (widget.paddingLeft ?? 0)
         : context._sizeWidget.width);
     final left = widget.paddingLeft ?? context._position.dx;
-    return (top, bottom, sizeOverlay, width, left);
+    return (bottom, top, sizeOverlay, width, left);
   }
 
-  void showOverlay(BuildContext context, ValueX value) {
+  void showOverlay(BuildContext context) {
+    final value = sizeShow(context);
     overlayEntry = OverlayEntry(
       builder: (ctx) => Material(
         type: MaterialType.transparency,
@@ -178,8 +198,8 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
             child: Stack(
               children: [
                 Positioned(
-                  top: value.$1,
-                  bottom: value.$2,
+                  top: value.$2,
+                  bottom: value.$1,
                   left: value.$5,
                   child: Container(
                     width: value.$4,
@@ -238,11 +258,13 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>>
 
   @override
   Widget build(BuildContext context) {
-    return widget.child?.call(node, controller) ??
-        TextFormField(
-          focusNode: node,
-          controller: controller,
-        );
+    return Builder(builder: (context) {
+      return widget.child?.call(node, controller) ??
+          TextFormField(
+            focusNode: node,
+            controller: controller,
+          );
+    });
   }
 }
 

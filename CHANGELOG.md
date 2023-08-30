@@ -1,3 +1,7 @@
+## 0.1.1
+
+- update, fix overlay
+
 ## 0.1.0
 
 - add safe area overlay
